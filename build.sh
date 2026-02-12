@@ -11,10 +11,10 @@ echo "🔨 Building React app..."
 npm run build
 
 echo "📦 Preparing static files..."
-# Copy the built dist folder to Django staticfiles
+# Copy dist folder contents to Django staticfiles
 mkdir -p backend/staticfiles
-rm -rf backend/staticfiles/dist
-cp -r dist backend/staticfiles/
+# Copy everything from dist (includes assets folder with hashed files)
+cp -r dist/* backend/staticfiles/ || true
 
 echo "🔄 Running Django migrations..."
 cd backend
