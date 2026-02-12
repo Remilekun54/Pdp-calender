@@ -19,7 +19,7 @@ def api_root(request):
 
 # Helper function to serve React index.html
 def serve_react_app(request, path=''):
-    """Serve the React app from dist folder"""
+    """Serve the React app from dist folder and fix asset paths"""
     
     # Render's path structure
     dist_path = Path('/opt/render/project/src/dist/index.html')
@@ -28,15 +28,18 @@ def serve_react_app(request, path=''):
     if not dist_path.exists():
         dist_path = Path(settings.BASE_DIR).parent / 'dist' / 'index.html'
     
-    if not dist_path.exists():
-        dist_path = Path('/app/dist/index.html')
-    
     # Read and serve the file
     if dist_path.exists():
         try:
             with open(dist_path, 'r', encoding='utf-8') as f:
                 content = f.read()
-            return HttpResponse(content, content_type='text/html')
+            
+            # Fix asset paths: change /assets/ to /static/assets/
+            # This is needed because Vite outputs /assets/ but Django serves from /static/
+            content = content.replace('src="/assets/', 'src="/static/assets/')
+            content = content.replace('href="/assets/', 'href="/static/assets/')
+            
+            return HttpResponse(content, content_type='text/html; charset=utf-8')
         except Exception as e:
             print(f'Error reading {dist_path}: {e}')
     
@@ -52,13 +55,12 @@ def serve_react_app(request, path=''):
     </head>
     <body class="flex items-center justify-center h-screen bg-gray-100">
         <div class="text-center">
-            <h1 class="text-3xl font-bold text-green-700 mb-4">🔧 Setting Up</h1>
-            <p class="text-gray-600 mb-4">Please wait while the app initializes...</p>
-            <p class="text-sm text-gray-500 mt-4">Refresh if this takes more than 30 seconds</p>
+            <h1 class="text-3xl font-bold text-green-700 mb-4">🔧 Initializing...</h1>
+            <p class="text-gray-600 mb-4">Please wait while the app starts up...</p>
         </div>
     </body>
     </html>
-    ''', content_type='text/html')
+    ''', content_type='text/html; charset=utf-8')
 
 urlpatterns = [
     path('api/', api_root),
