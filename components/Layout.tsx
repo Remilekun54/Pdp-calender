@@ -1,5 +1,7 @@
 
 import React from 'react';
+import oyo from './images/oyo.png';
+import pdp from './images/pdp.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -25,7 +27,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle, onBac
           <div className="flex items-center gap-3">
             <div className="flex flex-col items-center">
               <img 
-                src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Seal_of_Oyo_State.png" 
+                src={oyo} 
                 alt="Oyo State Coat of Arms" 
                 className="h-14 w-auto object-contain drop-shadow-sm"
               />
@@ -46,7 +48,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle, onBac
             <div className="absolute -inset-2 bg-[#008751]/10 rounded-full blur-md opacity-70 group-hover:opacity-100 transition-opacity"></div>
             <div className="relative z-10 p-1 bg-white rounded-full shadow-sm border border-gray-50">
               <img 
-                src="https://upload.wikimedia.org/wikipedia/en/5/5c/PDP_Nigeria_Logo.png" 
+                src={pdp} 
                 alt="Peoples Democratic Party Logo" 
                 className="h-20 w-20 object-contain drop-shadow-md"
               />
@@ -89,7 +91,7 @@ export const Layout: React.FC<LayoutProps> = ({ children, title, subtitle, onBac
         {/* Subtle Background Watermark */}
         <div className="fixed inset-0 pointer-events-none flex items-center justify-center opacity-[0.015] z-0">
            <img 
-            src="https://upload.wikimedia.org/wikipedia/en/5/5c/PDP_Nigeria_Logo.png" 
+            src={pdp} 
             alt="" 
             className="w-80 h-80 grayscale" 
            />

@@ -1,21 +1,47 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { WARDS_DATA } from './constants';
-import { Layout } from './components/Layout';
-import { WardCard } from './components/WardCard';
-import { calculateUpcomingMeetings, formatDate } from './utils/dateUtils';
+import { WebsiteLayout } from './components/WebsiteLayout';
+import { HomePage } from './components/HomePage';
+import { WardDetailsPage } from './components/WardDetailsPage';
 import { Ward } from './types';
+import { fetchWards, fetchWardById } from './utils/api';
+
+type ViewMode = 'home' | 'ward-details';
 
 const App: React.FC = () => {
+  const [viewMode, setViewMode] = useState<ViewMode>('home');
   const [selectedWardId, setSelectedWardId] = useState<string | null>(null);
+  const [wardsData, setWardsData] = useState<Ward[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sync state with URL hash for basic routing without path manipulation
+  // Fetch wards data from Django backend on mount
   useEffect(() => {
-    const handleHashChange = () => {
+    const loadWards = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchWards();
+        setWardsData(data);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load ward data. Make sure Django backend is running on http://localhost:8000');
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadWards();
+  }, []);
+
+  // Sync state with URL hash
+  useEffect(() => {
+    const handleHashChange = async () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash) {
+      if (hash && wardsData.find(w => w.id === hash)) {
         setSelectedWardId(hash);
+        setViewMode('ward-details');
       } else {
+        setViewMode('home');
         setSelectedWardId(null);
       }
     };
@@ -24,125 +50,72 @@ const App: React.FC = () => {
     handleHashChange(); // Initial check
 
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, []);
+  }, [wardsData]);
 
-  const selectedWard = useMemo(() => 
-    WARDS_DATA.find(w => w.id === selectedWardId), 
-    [selectedWardId]
+  const selectedWard = useMemo(
+    () => wardsData.find(w => w.id === selectedWardId),
+    [selectedWardId, wardsData]
   );
 
-  const upcomingMeetings = useMemo(() => {
-    if (!selectedWard) return [];
-    return calculateUpcomingMeetings(selectedWard.start_date, selectedWard.frequency_weeks);
-  }, [selectedWard]);
-
-  const handleSelectWard = (id: string) => {
-    window.location.hash = id;
+  const handleWardClick = (wardId: string) => {
+    window.location.hash = wardId;
   };
 
-  const handleBack = () => {
+  const handleAdminClick = () => {
+    // Open Django admin panel in a new tab
+    window.open('http://localhost:8000/admin/', '_blank');
+  };
+
+  const handleBackToHome = () => {
     window.location.hash = '';
+    setViewMode('home');
+    setSelectedWardId(null);
   };
 
-  if (selectedWard) {
-    const nextMeeting = upcomingMeetings[0];
-    const laterMeetings = upcomingMeetings.slice(1);
-
+  if (loading) {
     return (
-      <Layout 
-        title={selectedWard.ward_name} 
-        onBack={handleBack}
-      >
-        <div className="space-y-8 animate-in fade-in duration-300">
-          {/* Main Next Meeting Highlight - PDP Green Theme */}
-          <section className="bg-[#008751] text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
-            {/* Background PDP Accent */}
-            <div className="absolute top-0 right-0 w-16 h-16 bg-[#E31B23] opacity-30 -mr-8 -mt-8 rounded-full"></div>
-            
-            <p className="text-green-100 text-sm font-medium uppercase tracking-wider mb-2">Next Scheduled Meeting</p>
-            <h2 className="text-3xl font-extrabold leading-tight">
-              {formatDate(nextMeeting.date)}
-            </h2>
-            <div className="mt-6 flex flex-col gap-4">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 bg-white/20 p-1.5 rounded-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-xs text-green-100 font-medium">Time</p>
-                  <p className="text-lg font-semibold">{selectedWard.meeting_time}</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start gap-3">
-                <div className="mt-1 bg-white/20 p-1.5 rounded-lg">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-xs text-green-100 font-medium">Venue</p>
-                  <p className="text-lg font-semibold">{selectedWard.venue}</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Subsequent Dates */}
-          <section>
-            <h3 className="text-[#008751] font-bold mb-4 px-1 border-l-4 border-[#E31B23] pl-3">Future Meeting Dates</h3>
-            <div className="space-y-3">
-              {laterMeetings.map((meeting, idx) => (
-                <div key={idx} className="bg-white border border-gray-100 rounded-xl p-4 flex justify-between items-center shadow-sm">
-                  <p className="text-gray-700 font-medium">{formatDate(meeting.date)}</p>
-                  <span className="text-xs text-[#008751] font-bold bg-green-50 px-2 py-1 rounded">{selectedWard.meeting_time}</span>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="bg-green-50 rounded-xl p-4 border border-green-100">
-            <div className="flex items-center gap-2 text-[#008751] mb-1">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-              </svg>
-              <h4 className="text-sm font-bold uppercase tracking-tight text-[#008751]">Meeting Guidelines</h4>
-            </div>
-            <p className="text-sm text-green-800">
-              Meetings occur every <span className="font-bold">{selectedWard.frequency_weeks} weeks</span>. Attendance is vital for community progress. Power to the People!
-            </p>
-          </section>
+      <WebsiteLayout onAdminClick={handleAdminClick}>
+        <div className="text-center py-20">
+          <div className="inline-block">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#008751]"></div>
+          </div>
+          <p className="mt-4 text-gray-600">Loading ward data...</p>
         </div>
-      </Layout>
+      </WebsiteLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <WebsiteLayout onAdminClick={handleAdminClick}>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-bold text-red-700 mb-2">Error Loading Data</h2>
+          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-sm text-gray-600">
+            To use this application, please start the Django backend:
+          </p>
+          <code className="block bg-red-100 p-3 mt-3 rounded text-sm font-mono">
+            cd backend && python manage.py runserver
+          </code>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-[#008751] text-white rounded-lg hover:bg-[#006a40] transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </WebsiteLayout>
     );
   }
 
   return (
-    <Layout 
-      title="Akinyele Ward Meetings" 
-      subtitle="Select your ward to see meeting dates"
-    >
-      <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-        {WARDS_DATA.map((ward) => (
-          <WardCard 
-            key={ward.id} 
-            ward={ward} 
-            onClick={() => handleSelectWard(ward.id)} 
-          />
-        ))}
-      </div>
-      
-      <div className="mt-10 bg-[#008751]/5 border border-[#008751]/10 rounded-2xl p-6 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#E31B23]/5 -mr-16 -mt-16 rounded-full"></div>
-        <h4 className="text-[#008751] font-bold mb-2">PDP Administration</h4>
-        <p className="text-gray-600 text-sm leading-relaxed relative z-10">
-          This digital calendar is provided to ensure all party members and residents stay informed. Contact your Ward Chairperson for venue changes or specific agenda details.
-        </p>
-      </div>
-    </Layout>
+    <WebsiteLayout onAdminClick={handleAdminClick}>
+      {viewMode === 'ward-details' && selectedWard ? (
+        <WardDetailsPage ward={selectedWard} onBack={handleBackToHome} />
+      ) : (
+        <HomePage wards={wardsData} onWardClick={handleWardClick} />
+      )}
+    </WebsiteLayout>
   );
 };
 
