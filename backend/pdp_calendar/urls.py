@@ -3,7 +3,7 @@ URL configuration for pdp_calendar project.
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from django.http import JsonResponse, FileResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 from django.conf.urls.static import static
 from pathlib import Path
@@ -21,24 +21,27 @@ def api_root(request):
 def serve_react_app(request, path=''):
     """Serve the React app from dist folder"""
     
-    possible_paths = [
-        # Try parent directory dist (production build on Render)
-        Path('/app/dist/index.html'),  # Render default app directory
-        Path(settings.BASE_DIR).parent / 'dist' / 'index.html',  # Local production
-        Path('/home/render/app/dist/index.html'),  # Render alt path
-    ]
+    # Render's path structure
+    dist_path = Path('/opt/render/project/src/dist/index.html')
     
-    for dist_path in possible_paths:
-        if dist_path.exists():
-            try:
-                with open(dist_path, 'rb') as f:
-                    return FileResponse(f, content_type='text/html')
-            except Exception as e:
-                print(f'Error reading {dist_path}: {e}')
-                continue
+    # Fallback paths
+    if not dist_path.exists():
+        dist_path = Path(settings.BASE_DIR).parent / 'dist' / 'index.html'
     
-    # Debug response
-    return HttpResponse(f'''
+    if not dist_path.exists():
+        dist_path = Path('/app/dist/index.html')
+    
+    # Read and serve the file
+    if dist_path.exists():
+        try:
+            with open(dist_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            return HttpResponse(content, content_type='text/html')
+        except Exception as e:
+            print(f'Error reading {dist_path}: {e}')
+    
+    # Fallback response if file not found
+    return HttpResponse('''
     <!DOCTYPE html>
     <html>
     <head>
@@ -49,15 +52,10 @@ def serve_react_app(request, path=''):
     </head>
     <body class="flex items-center justify-center h-screen bg-gray-100">
         <div class="text-center">
-            <h1 class="text-3xl font-bold text-green-700 mb-4">⚠️ Frontend Not Ready</h1>
-            <p class="text-gray-600 mb-4">React build files are being prepared...</p>
-            <p class="text-xs text-gray-400 font-mono">Checked: {', '.join(str(p) for p in possible_paths)}</p>
-            <p class="text-sm text-gray-500 mt-4">Try refreshing in a few moments</p>
+            <h1 class="text-3xl font-bold text-green-700 mb-4">🔧 Setting Up</h1>
+            <p class="text-gray-600 mb-4">Please wait while the app initializes...</p>
+            <p class="text-sm text-gray-500 mt-4">Refresh if this takes more than 30 seconds</p>
         </div>
-        <script>
-            // Auto-refresh every 5 seconds
-            setTimeout(() => location.reload(), 5000);
-        </script>
     </body>
     </html>
     ''', content_type='text/html')
