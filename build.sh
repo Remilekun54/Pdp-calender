@@ -10,18 +10,21 @@ npm install
 echo "🔨 Building React app..."
 npm run build
 
-echo "📦 Preparing static files..."
-# Copy dist folder contents to Django staticfiles
-mkdir -p backend/staticfiles
-# Copy everything from dist (includes assets folder with hashed files)
-cp -r dist/* backend/staticfiles/ || true
+echo "✅ Build output created at: dist/"
 
-echo "🔄 Running Django migrations..."
+echo "📦 Preparing Django static files..."
 cd backend
+
+# Run migrations
+echo "🔄 Running Django migrations..."
 python manage.py migrate --noinput
 
+# Collect static files - this copies everything to staticfiles
 echo "📋 Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "✅ Build complete!"
+echo "✅ Build pipeline complete!"
+echo "Frontend files available at: dist/index.html"
+echo "Static files collected to: staticfiles/"
+
 
