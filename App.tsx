@@ -24,7 +24,7 @@ const App: React.FC = () => {
         setWardsData(data);
         setError(null);
       } catch (err) {
-        setError('Failed to load ward data. Make sure Django backend is running on http://localhost:8000');
+        setError('Failed to load ward data. Make sure the backend is reachable and API is available.');
         console.error(err);
       } finally {
         setLoading(false);
@@ -62,8 +62,8 @@ const App: React.FC = () => {
   };
 
   const handleAdminClick = () => {
-    // Open Django admin panel in a new tab
-    window.open('http://localhost:8000/admin/', '_blank');
+    // Open Django admin panel in a new tab (relative path works both locally and in production)
+    window.open('/admin/', '_blank');
   };
 
   const handleBackToHome = () => {
