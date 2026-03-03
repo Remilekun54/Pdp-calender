@@ -14,10 +14,6 @@ class MeetingForm(ModelForm):
                 'class': 'vDateField',
                 'style': 'width: 100%; padding: 8px; font-size: 14px;'
             }),
-            'meeting_time': admin.widgets.AdminTimeWidget(),
-            'venue': admin.widgets.AdminTextInputWidget(),
-            'agenda': admin.widgets.AdminTextareaWidget(),
-            'notes': admin.widgets.AdminTextareaWidget(),
         }
 
 @admin.register(Ward)
