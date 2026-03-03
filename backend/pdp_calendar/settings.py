@@ -116,6 +116,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings - support both development and production
+CORS_ALLOWED_ORIGINS_STR = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:5173')
 CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_STR.split(',')
 
 # CSRF settings for production (required for Render HTTPS)
