@@ -1,6 +1,6 @@
 import { Ward, Meeting } from '../types';
 
-const API_URL = 'http://localhost:8000/api/wards';
+const API_URL = '/api/wards';
 
 export const fetchWards = async (): Promise<Ward[]> => {
   try {
