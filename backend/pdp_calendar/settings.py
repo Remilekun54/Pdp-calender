@@ -20,8 +20,8 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-pdp-akinyele-calendar-dev-
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
 # Get allowed hosts from environment or use defaults
-ALLOWED_HOSTS_STR = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1')
-ALLOWED_HOSTS = ALLOWED_HOSTS_STR.split(',')
+ALLOWED_HOSTS_STR = os.getenv('ALLOWED_HOSTS', 'localhost,127.0.0.1,.onrender.com')
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_STR.split(',')]
 
 # Application definition
 INSTALLED_APPS = [
@@ -116,8 +116,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings - support both development and production
-CORS_ALLOWED_ORIGINS_STR = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:5173')
 CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_STR.split(',')
+
+# CSRF settings for production (required for Render HTTPS)
+CSRF_TRUSTED_ORIGINS_STR = os.getenv('CSRF_TRUSTED_ORIGINS', 'https://*.onrender.com')
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in CSRF_TRUSTED_ORIGINS_STR.split(',')]
 
 # Allow localhost for development
 if DEBUG:
